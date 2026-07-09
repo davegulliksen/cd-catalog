@@ -1,0 +1,1050 @@
+/* ===============================
+   CSS VARIABLES & RESET
+   =============================== */
+:root {
+  --bg:               #f4f2ed;
+  --surface:          #ffffff;
+  --border:           #e0ddd6;
+  --text-primary:     #1a1a1a;
+  --text-secondary:   #666;
+  --accent:           #c8a84b;
+  --accent-dark:      #a8883b;
+  --btn-cart:         #333;
+  --btn-email:        #e6b800;
+  --btn-email-text:   #5a4500;
+  --btn-fb:           #1877f2;
+  --btn-pdf:          #28a745;
+  --badge-new-bg:     #E6F1FB;
+  --badge-new-text:   #185FA5;
+  --badge-rare-bg:    #FAEEDA;
+  --badge-rare-text:  #854F0B;
+  --badge-avail-bg:   #EAF3DE;
+  --badge-avail-text: #3B6D11;
+  --radius:           8px;
+  --radius-lg:        12px;
+  --shadow:           0 2px 8px rgba(0,0,0,0.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* ===============================
+   SCREEN SYSTEM
+   =============================== */
+.screen {
+  display: none;          /* all screens hidden by default; JS adds .active to show one */
+  min-height: 100vh;
+  padding-bottom: 60px;   /* space for the floating cart button */
+}
+
+.screen.active {
+  display: block;
+}
+
+/* The catalog screen overrides the default block/scroll layout so the
+   three-panel layout can fill exactly the viewport height without a
+   page-level scrollbar. overflow: hidden is key — only the discrete
+   column and individual panels scroll, not the whole page. */
+#screen-catalog.active {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: unset;
+  overflow: hidden;
+  padding-bottom: 0;      /* override the .screen 60px bottom padding */
+}
+
+footer {
+  display: none;
+}
+
+
+/* ===============================
+   SPLASH SCREEN
+   =============================== */
+#screen-splash {
+  background-image: url('https://raw.githubusercontent.com/davegulliksen/cd-catalog/main/cd-catalog%20header.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+#screen-splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.58);
+  z-index: 0;
+}
+
+.splash-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  text-align: center;
+}
+
+.splash-title {
+  font-size: clamp(1.5rem, 5vw, 3.2rem);
+  font-family: 'Comic Sans MS', cursive;
+  font-weight: bold;
+  color: #ffed4e;
+  line-height: 1.0;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.7),
+               0 0 30px rgba(200,168,75,0.4);
+}
+
+.splash-sub {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.shipping-box {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.shipping-box strong { color: #ffffff; }
+
+.splash-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 620px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.splash-card {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.2s;
+  background: rgba(200, 168, 75, 0.75);
+  border: 2px solid rgba(200, 168, 75, 0.9);
+  flex: 1;
+  min-width: 180px;
+}
+
+.splash-card--full  { flex-basis: 100%; }
+.splash-card--2     { background: rgba(100, 160, 180, 0.45); border-color: rgba(100, 160, 180, 0.7); }
+.splash-card--3     { background: rgba(140, 180, 120, 0.45); border-color: rgba(140, 180, 120, 0.7); }
+
+.splash-card:hover  { transform: scale(1.02); opacity: 0.92; }
+.splash-card:active { transform: scale(0.98); }
+
+.splash-card-img {
+  width: auto;
+  height: 73px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.15);
+}
+
+.splash-card-text {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.splash-card-label {
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  color: #ffffff;
+  font-weight: normal;
+}
+
+.splash-btn-note {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.85);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .splash-nav       { flex-direction: column; }
+  .splash-card-img  { height: 57px; }
+  .splash-card-label{ font-size: 0.9rem; }
+}
+
+/* ===============================
+   SCREEN HEADER
+   (shared by catalog, faq, coming)
+   =============================== */
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;     /* header stays pinned while the panel body scrolls */
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+  flex-shrink: 0;       /* never shrink inside the catalog flex column */
+}
+
+.home-btn {
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.home-btn:hover { background: var(--bg); }
+
+.screen-title {
+  font-size: 1.1rem;
+  font-weight: normal;
+  flex: 1;
+}
+
+/* "CLICK AN ALBUM FOR DETAILS" blinks red-on-yellow 3 times then stays on */
+.screen-title em {
+  color: #ff0000;
+  background-color: #FFFF00;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-style: normal;
+  animation: blink-on-off 1s steps(1) 0s 3 forwards;
+}
+
+@keyframes blink-on-off {
+  0%   { opacity: 1; }
+  50%  { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Sort dropdown + Series|All tab sit together in the header */
+.filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.filter-wrap label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-wrap select {
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* ── SEGMENTED TAB: [ Series | All ] ──
+   Two buttons share a single rounded border, the active one filled gold. */
+.seg-tab {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;       /* clips children so the border-radius shows on corners */
+  flex-shrink: 0;
+}
+
+.seg-btn {
+  font-size: 0.82rem;
+  padding: 4px 11px;
+  border: none;
+  border-right: 1px solid var(--border);  /* divider between the two buttons */
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: Georgia, serif;
+  transition: background 0.15s, color 0.15s;
+}
+
+.seg-btn:last-child {
+  border-right: none;     /* remove divider after the last button */
+}
+
+/* Active tab gets the gold accent fill */
+.seg-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .screen-header { gap: 8px; }
+  .filter-wrap   { width: 100%; justify-content: flex-start; }
+}
+
+/* ===============================
+   THREE-PANEL CATALOG LAYOUT
+   =============================== */
+
+/* Outer flex row that fills the screen height below the sticky header.
+   min-height: 0 is essential — without it a flex child with overflow
+   content will expand beyond its parent rather than creating a scrollbar. */
+.catalog-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── BUCKET COLUMN ──
+   Narrow; contains the first-level navigation anchors.
+   Scrolls if there are many buckets (rare — usually ≤26).
+   The scrollbar appears on its right edge, visually between
+   the bucket col and the discrete col. */
+.bucket-col {
+  width: 52px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;          /* Firefox */
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  padding: 4px 3px;
+}
+
+.bucket-col::-webkit-scrollbar       { width: 6px; }
+.bucket-col::-webkit-scrollbar-track { background: transparent; }
+.bucket-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Individual bucket item (letter, price anchor, date anchor) */
+.bucket-item {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+  padding: 4px 2px;
+  margin: 1px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bucket-item:hover  { background: var(--border); }
+
+/* Gold fill on the selected bucket */
+.bucket-item.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* ── DISCRETE COLUMN ──
+   Shows the individual selectable items within the bucket navigation.
+   Always scrollable. The scrollbar appears on its right edge, acting
+   as a visual separator between this column and the album grid. */
+.discrete-col {
+  width: 165px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.discrete-col::-webkit-scrollbar       { width: 6px; }
+.discrete-col::-webkit-scrollbar-track { background: transparent; }
+.discrete-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Individual discrete item (series name, price, date, catalog number) */
+.discrete-item {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.1s;
+}
+
+.discrete-item:last-child { border-bottom: none; }
+.discrete-item:hover      { background: var(--bg); }
+
+/* Gold left accent on the selected discrete item */
+.discrete-item.active {
+  background: #fff8e7;
+  border-left: 3px solid var(--accent);
+  padding-left: 7px;   /* compensates for the 3px border so text doesn't jump */
+}
+
+/* ── GRID WRAPPER ──
+   Fills the remaining horizontal space.
+   position: relative allows the loading message to overlay it absolutely. */
+.grid-wrapper {
+  flex: 1;
+  min-width: 0;         /* prevents flex blowout when cards are wide */
+  position: relative;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* ── LOADING MESSAGE ──
+   Shown only when the catalog.jsonl fetch exceeds ~400ms.
+   Covers the grid area with a centered message. */
+.loading-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.loading-msg.hidden { display: none; }
+
+/* ── ARROW COLUMN ──
+   Six navigation buttons stacked vertically on the far right.
+   justify-content: center keeps them vertically centered as a group. */
+.arrow-col {
+  width: 44px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.arrow-btn {
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.12s;
+  padding: 0;
+  line-height: 1;
+}
+
+.arrow-btn:hover  { background: var(--border); }
+.arrow-btn:active { background: var(--accent); color: #fff; }
+
+/* Per-pair colors for the three navigation button groups */
+.arrow-btn.arrow-jump { background-color: #f06292 !important; color: #fff; border: none; }
+.arrow-btn.arrow-page { background-color: #6a94b8 !important; color: #fff; border: none; }
+.arrow-btn.arrow-row  { background-color: #7ab87a !important; color: #fff; border: none; }
+/* Responsive: narrow the left panels on smaller screens to give the grid
+   more room. The grid column count adjusts automatically via JS, so only
+   panel widths need to change here. */
+@media (max-width: 640px) {
+  .discrete-col { width: 120px; }
+  .bucket-col   { width: 42px; }
+}
+
+@media (max-width: 420px) {
+  .discrete-col { width: 90px; }
+  .bucket-col   { width: 36px; }
+  .arrow-col    { width: 36px; }
+  .arrow-btn    { width: 26px; height: 24px; font-size: 12px; }
+}
+
+/* ===============================
+   CD GRID
+   =============================== */
+
+/* Grid uses auto-fill so card count adjusts to available width automatically. */
+.cd-grid {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+
+/* ── ALBUM CARD ──
+   Cards are flex columns so the thumbnail expands to fill whatever
+   height the grid row provides, and the info strip stays at its
+   natural height at the bottom. */
+.cd-thumb {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+  position: relative;       /* for the add-confirmation badge */
+  display: flex;
+  flex-direction: column;
+}
+
+.cd-thumb:hover  { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: translateY(-2px); }
+.cd-thumb:active { transform: scale(0.97); }
+
+/* Bright red halo border applied to cards that match the current discrete selection */
+.cd-halo {
+  border: 4px solid #e02020 !important;
+  box-shadow: 0 0 0 3px rgba(224, 32, 32, 0.35);
+}
+
+/* Thumbnail fills all available card height above the info strip.
+   min-height: 0 is required for a flex child to shrink below its content size. */
+.cd-thumb-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  display: block;
+  background: var(--bg);
+}
+
+.cd-thumb-info {
+  padding: 5px 7px 6px;
+  flex-shrink: 0;           /* always visible; never compressed by the thumbnail */
+}
+
+.cd-thumb-cat {
+  font-size: 10px;
+  color: #000000 !important;
+  margin-bottom: 2px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+
+.cd-thumb-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cd-thumb-price {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.cd-thumb-price s,
+.modal-price s {
+  font-weight: normal;
+  color: var(--text-secondary);
+}
+
+.cd-thumb-badges {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+/* ===============================
+   BADGES
+   =============================== */
+.badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.badge-new {
+  background: var(--badge-new-bg);
+  color: var(--badge-new-text);
+  font-size: 8px;
+  white-space: normal;
+  width: fit-content;
+  text-align: center;
+  line-height: 1.2;
+  padding: 2px 2px;
+}
+
+.badge-rare {
+  background: var(--badge-rare-bg);
+  color: var(--badge-rare-text);
+}
+
+.badge-available {
+  background: var(--badge-avail-bg);
+  color: var(--badge-avail-text);
+  font-size: 0.8rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+}
+
+/* ===============================
+   CD DETAIL MODAL
+   =============================== */
+.cd-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 16px;
+}
+
+.cd-modal-backdrop.hidden { display: none; }
+
+.cd-modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.cd-modal-close-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 12px 4px;
+  flex-shrink: 0;
+}
+
+.cd-modal-close {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  background: none;
+  cursor: pointer;
+  font-family: Georgia, serif;
+}
+
+.cd-modal-close:hover { background: var(--bg); }
+
+.cd-modal-top {
+  display: flex;
+  gap: 12px;
+  padding: 0 14px 12px;
+  flex-shrink: 0;
+}
+
+.cd-modal-cover {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.cd-modal-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.cd-modal-meta h3 {
+  font-size: 0.95rem;
+  font-weight: normal;
+  margin-bottom: 4px;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.cd-modal-meta p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+  font-family: Arial, sans-serif;
+}
+
+.modal-price {
+  font-size: 1.1rem !important;
+  font-weight: bold !important;
+  color: var(--text-primary) !important;
+  margin-top: 6px !important;
+}
+
+.modal-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+.cd-modal-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  font-family: Arial, sans-serif;
+}
+
+.cd-modal-desc { padding-top: 10px; }
+
+.cd-modal-cond {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.cd-modal-desc strong,
+.cd-modal-cond strong {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.cd-modal-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+
+.btn-cart-modal {
+  grid-column: span 2;
+  padding: 9px;
+  border-radius: var(--radius);
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  background: var(--btn-cart);
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.btn-cart-modal:hover    { background: #111; }
+.btn-cart-modal.in-cart  { background: #888; cursor: not-allowed; }
+
+.cd-modal-btns a {
+  text-align: center;
+  padding: 9px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  text-decoration: none;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+.cd-modal-btns a:hover { opacity: 0.85; }
+
+.btn-email { background: var(--btn-email); color: var(--btn-email-text); }
+.btn-fb    { background: var(--btn-fb);    color: #fff; }
+
+.btn-pdf {
+  background: var(--btn-pdf);
+  color: #fff;
+  grid-column: span 2;
+}
+
+/* ===============================
+   FAQ SCREEN
+   =============================== */
+.faq-body {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.faq-question {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 22px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.faq-answer {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+}
+
+.faq-nav-bottom {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+/* ===============================
+   COMING CDs SCREEN
+   =============================== */
+.coming-body {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.coming-intro {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+#coming-list {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  font-family: Arial, sans-serif;
+}
+
+.coming-line {
+  padding: 3px 0;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coming-line:last-child { border-bottom: none; }
+
+.coming-line-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+/* ===============================
+   ADD CONFIRMATION ANIMATION
+   =============================== */
+.add-confirmation {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #28a745;
+  color: white;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  font-family: Arial, sans-serif;
+}
+
+.add-confirmation.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===============================
+   FLOATING CART BUTTON
+   =============================== */
+#cart-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  z-index: 9999;
+  transition: background 0.2s;
+}
+
+#cart-button:hover { background: #111; }
+
+/* ===============================
+   CART MODAL
+   =============================== */
+#cart-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+#cart-modal.hidden { display: none; }
+
+#cart-content {
+  background: var(--surface);
+  width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.cart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cart-header h2 { font-size: 1.1rem; font-weight: normal; }
+
+.close-btn {
+  background: #c62828;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.close-btn:hover { background: #a61f1f; }
+
+.return-btn.top-return {
+  width: 100%;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-family: Georgia, serif;
+}
+
+.return-btn.top-return:hover { background: #222; }
+
+.checkout-hint {
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  color: #444;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+.cart-items { margin-bottom: 15px; }
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cart-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius);
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.cart-info   { flex: 1; }
+.cart-cat    { font-size: 0.8rem; color: #666; }
+.cart-price  { font-size: 0.9rem; font-weight: bold; }
+
+.remove-item {
+  background: #c62828;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.remove-item:hover { background: #a61f1f; }
+
+.cart-totals   { margin-top: 10px; font-size: 0.95rem; }
+
+.total-line {
+  margin-top: 6px;
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+
+.free-shipping-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f5f9ff;
+  border-left: 4px solid #4a90e2;
+  border-radius: 4px;
+  font-size: 0.92em;
+  color: #333;
+  line-height: 1.4;
+}
+
+#paypal-button-container { margin-top: 15px; }
+
+/* ===============================
+   FOOTER
+   =============================== */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+/* ===============================
+   RESPONSIVE — MODAL / CART
+   =============================== */
+@media (max-width: 480px) {
+  .cd-modal-box  { max-height: 95vh; }
+  .cd-modal-cover{ width: 90px; height: 90px; }
+  .screen-title  { font-size: 0.95rem; }
+
+  #cart-content  { width: calc(100vw - 32px); }
+}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Selling rare and common Japanese anime CDs both authorized and bootleg, produced in Japan, China and the United States.">
+  <meta name="keywords" content="anime CDs, Japanese imports, anime soundtracks, rare CDs, OVA music, Japanese music collection, CD catalog, anime OST, VGM, J-pop, collector CDs, early anime, vintage anime">
+  <meta name="author" content="Dave Gulliksen">
+  <title>Japanese Anime CDs Direct from the Collector - Selling Off My 450+ Vintage CDs</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-inner">
+    <h1 class="splash-title">Anime CDs Direct from the Collector</h1>
+    <p class="splash-sub">Liquidation &mdash; Selling Off My 450+ Vintage CDs</p>
+    <div class="shipping-box">
+      <strong>Shipping (continental USA):</strong><br>
+      $5 for one CD, $1 per added CD. $50+ order: FREE SHIPPING!<br>
+    </div>
+    <nav class="splash-nav">
+      <!-- Top row: Catalog and Coming CDs sit side by side (flex-direction: row in CSS) -->
+
+      <!-- Card 1: Go to Catalog — gold, no subtitle -->
+      <div class="splash-card" onclick="showScreen('catalog')">
+        <img src="button_art_3.jpg" class="splash-card-img" alt="Catalog">
+        <div class="splash-card-text">
+          <span class="splash-card-label">Go to Catalog</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Coming CDs — sage green, shares top row with Card 1 -->
+      <div class="splash-card splash-card--3" onclick="showScreen('coming')">
+        <img src="button_art_1.jpg" class="splash-card-img" alt="Coming CDs">
+        <div class="splash-card-text">
+          <span class="splash-card-label">Coming CDs</span>
+        </div>
+      </div>
+
+      <!-- Card 2: FAQs — teal, splash-card--full forces it onto its own full-width row below -->
+      <div class="splash-card splash-card--2 splash-card--full" onclick="showScreen('faq')">
+        <img src="button_art_2.jpg" class="splash-card-img" alt="FAQ">
+        <div class="splash-card-text">
+          <span class="splash-card-label">FAQs</span>
+          <span class="splash-btn-note">First time? Please read</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<!-- CATALOG SCREEN
+     Layout: sticky header + full-height three-panel body.
+     Panels left-to-right: bucket col | discrete col | grid | arrow col. -->
+<div id="screen-catalog" class="screen">
+  <div class="screen-header">
+    <button class="home-btn" onclick="showScreen('splash')">&#8592; Home</button>
+    <h2 class="screen-title">Catalog &mdash; <em>CLICK AN ALBUM FOR DETAILS</em></h2>
+
+    <!-- Sort dropdown (5 options) + Series|All mode toggle -->
+    <div class="filter-wrap">
+      <label for="sortSelect">Sort:</label>
+      <select id="sortSelect">
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+        <option value="price-asc">Price Low&ndash;High</option>
+        <option value="price-desc">Price High&ndash;Low</option>
+        <option value="catalog">Catalog Number</option>
+      </select>
+      <!-- Segmented tab: Series mode shows letter/series nav;
+           All mode shows price or date buckets depending on sort -->
+      <div class="seg-tab" role="group" aria-label="Display mode">
+        <button class="seg-btn active" id="tab-series">Series</button>
+        <button class="seg-btn"        id="tab-all"   >All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREE-PANEL CATALOG LAYOUT
+       Fills all remaining height after the sticky header. -->
+  <div class="catalog-layout">
+
+    <!-- PANEL 1: BUCKET COLUMN
+         Narrow; shows the first-level navigation anchors.
+         In Series mode: letters (#, A-Z) that have at least one series.
+         In All/price mode: 26 evenly-spaced dollar-amount anchors.
+         In All/date mode: up to 26 mm/yy anchors.
+         In All/catalog mode: first letters of catalog numbers that exist.
+         Clicking a bucket scrolls the discrete column — does NOT redraw the grid. -->
+    <div id="bucket-col" class="bucket-col"></div>
+
+    <!-- PANEL 2: DISCRETE COLUMN
+         Scrollable; shows the individual selectable items.
+         Series mode: series name + album count.
+         All/price: individual price values.
+         All/date: individual mm/dd/yy dates.
+         All/catalog: individual catalog numbers.
+         Clicking an item redraws the grid and applies the halo. -->
+    <div id="discrete-col" class="discrete-col"></div>
+
+    <!-- PANEL 3: GRID WRAPPER
+         Flex-grows to fill remaining width.
+         Scrollable — mouse wheel, scrollbar, and touch all work natively. -->
+    <div class="grid-wrapper">
+      <!-- Loading message: hidden by default; JS shows it only if
+           the fetch takes longer than ~400 ms (one-time per session) -->
+      <div id="loading-msg" class="loading-msg hidden">Loading catalog&hellip;</div>
+      <div id="catalog" class="cd-grid"></div>
+    </div>
+
+  </div><!-- end .catalog-layout -->
+</div><!-- end #screen-catalog -->
+
+<!-- FAQ SCREEN (unchanged) -->
+<div id="screen-faq" class="screen">
+  <div class="screen-header">
+    <button class="home-btn" onclick="showScreen('splash')">&#8592; Home</button>
+    <h2 class="screen-title">Frequently Asked Questions</h2>
+  </div>
+  <div class="faq-body">
+
+    <div class="faq-question">1. Who am I?</div>
+    <div class="faq-answer">
+      Hi, I'm Dave Gulliksen. I've been an anime enthusiast and collector since the 1980s when it was called "Japanimation." Over the years I've amassed a huge collection of anime VHS tapes, laser discs and DVDs, plus manga in English and Japanese and music on CDs. I live in the Myrtle Beach area of SC.
+    </div>
+
+    <div class="faq-question">2. What am I selling?</div>
+    <div class="faq-answer">
+      What I'm currently selling on this page is my collection of about 450 anime CDs. I've sold my entire collection of laser discs, and these are the next most bulky items I have. I've been a seller on eBay for 20+ years, with a 100% satisfaction rating, account davegulliksen. I'm trying to price them at about 70-80% of the lowest price I can find online. It's a slow process to do the catalog entries and as of the beginning of March '26, I'm still tweaking this program, so please be patient.
+    </div>
+
+    <div class="faq-question">3. Why am I selling it?</div>
+    <div class="faq-answer">
+      Now in my late 70s, it's time to think about what happens when I must move to much smaller living quarters like assisted living, which won't be able to house any of my collection. So I'm trying to get it into the hands of other collectors before the time comes when I have to dispose of it quickly.
+    </div>
+
+    <div class="faq-question">4. Why not on eBay?</div>
+    <div class="faq-answer">
+      I'm using this page to sell them because I'm scanning and ripping them for my music storage in Foobar2000, and I can use the information in it to generate an updated selling list in a couple of minutes. eBay takes about an hour to enter each CD's information and scans, eBay bulk upload hasn't worked right, Discogs doesn't list a substantial number of my CDs, and neither does VGMdb. If you have wishes for a certain anime series or want to make an offer on a bulk purchase, click on any of the email or FaceBook buttons and leave me a message.
+    </div>
+
+    <div class="faq-question">5. What form of payment can you use?</div>
+    <div class="faq-answer">
+      I currently accept PayPal, as shown at checkout, and may add options later.
+    </div>
+
+    <div class="faq-question">6. How soon will it ship?</div>
+    <div class="faq-answer">
+      I generally ship within a few business days after payment is received. Include your email to get updates on what the tracking number is.
+    </div>
+
+    <div class="faq-question">7. What is the return policy?</div>
+    <div class="faq-answer">
+      If there's a problem with your order, contact me at DaveGUrgent&#64;aol.com and we'll work out a fair solution.
+    </div>
+
+    <div class="faq-nav-bottom">
+      <button class="home-btn" onclick="showScreen('splash')">&#8592; Home</button>
+      <button class="home-btn" onclick="showScreen('catalog')">Go to Catalog &#8594;</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- COMING CDs SCREEN (unchanged) -->
+<div id="screen-coming" class="screen">
+  <div class="screen-header">
+    <button class="home-btn" onclick="showScreen('splash')">&#8592; Home</button>
+    <h2 class="screen-title">Coming CDs</h2>
+  </div>
+  <div class="coming-body">
+    <p class="coming-intro">These are some more of the CDs in my collection that will be added to the catalog as I complete their entries. CDs marked <span class="badge-available">Available Now</span> are already listed in the catalog.</p>
+    <div id="coming-list">Loading...</div>
+  </div>
+</div>
+
+<!-- FLOATING CART BUTTON -->
+<div id="cart-button">View Cart (0)</div>
+
+<!-- CART MODAL -->
+<div id="cart-modal" class="hidden">
+  <div id="cart-content"></div>
+</div>
+
+<!-- CD DETAIL MODAL (unchanged) -->
+<div id="cd-modal" class="cd-modal-backdrop hidden">
+  <div class="cd-modal-box">
+    <div class="cd-modal-close-row">
+      <button class="cd-modal-close" onclick="closeModal()">close</button>
+    </div>
+    <div class="cd-modal-top">
+      <img id="modal-image" src="" alt="" class="cd-modal-cover">
+      <div class="cd-modal-meta">
+        <div id="modal-badges" class="modal-badges"></div>
+        <h3 id="modal-title"></h3>
+        <p id="modal-catnum"></p>
+        <p id="modal-label-year"></p>
+        <p id="modal-runtime"></p>
+        <p class="modal-price" id="modal-price"></p>
+      </div>
+    </div>
+    <div class="cd-modal-scroll">
+      <div class="cd-modal-desc" id="modal-description"></div>
+      <div class="cd-modal-cond" id="modal-condition"></div>
+    </div>
+    <div class="cd-modal-btns">
+      <button class="btn-cart-modal" id="modal-cart-btn">Add to Cart</button>
+      <a class="btn-email" id="modal-email" href="#">Email</a>
+      <a class="btn-fb"    id="modal-fb"    href="#">Facebook</a>
+      <a class="btn-pdf"   id="modal-pdf"   href="javascript:void(0)" target="_blank"
+         style="display:none;" onclick="openPdfEnvelope(event, this)">This specific CD's scans (PDF)</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>&copy; 2026 Dave Gulliksen &mdash; Japanese Anime CD Catalog</p>
+</footer>
+
+<script src="https://www.paypal.com/sdk/js?client-id=Afm5CcQZYQVN2gEzNh7c1kn0GiRRYsZfrpR0N1dcKWXuOBdad_YCajbDVPx4pNzDHqGFh5tUmTgHHl0R&currency=USD"></script>
+<script src="cart.js"></script>
+<script src="script.js?v=15"></script>
+</body>
+</html>

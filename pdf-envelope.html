@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CD Scan Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --toolbar-bg: #1a1c1f;
+      --toolbar-border: #2e3136;
+      --btn-bg: #26292e;
+      --btn-hover: #32363d;
+      --btn-active: #3d8cff22;
+      --accent: #3d8cff;
+      --accent-dim: #2a5fbd;
+      --text-primary: #e4e6ea;
+      --text-muted: #7a7f8a;
+      --viewer-bg: #2c2f35;
+      --close-hover: #c0392b;
+      --divider: #2e3136;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--viewer-bg);
+      font-family: 'DM Mono', monospace;
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    /* ── TOOLBAR ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      height: 52px;
+      background: var(--toolbar-bg);
+      border-bottom: 1px solid var(--toolbar-border);
+      user-select: none;
+      position: relative;
+      z-index: 10;
+    }
+
+    .toolbar-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: var(--divider);
+      margin: 0 6px;
+    }
+
+    .spacer { flex: 1; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      background: var(--btn-bg);
+      border: 1px solid var(--toolbar-border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--btn-hover); border-color: #3e434d; }
+    .btn:active { background: var(--btn-active); border-color: var(--accent); }
+    .btn svg { flex-shrink: 0; }
+
+    #zoom-display {
+      min-width: 48px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 6px 4px;
+      letter-spacing: 0.04em;
+    }
+
+    #fit-btn {
+      min-width: 96px;
+      justify-content: center;
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+    #fit-btn:hover { background: var(--btn-active); }
+
+    #close-btn {
+      background: transparent;
+      border-color: #3a2020;
+      color: #d9534f;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    #close-btn:hover { background: var(--close-hover); border-color: var(--close-hover); color: #fff; }
+
+    /* ── VIEWER AREA ── */
+    #viewer-wrap {
+      width: 100%;
+      height: calc(100vh - 52px);
+      overflow: auto;
+      background: var(--viewer-bg);
+      padding: 24px;
+      /* Smooth scrolling for mobile */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #pdf-frame {
+      margin: 0 auto;
+      border: none;
+      background: #fff;
+      display: block;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35);
+      border-radius: 2px;
+      transition: width 0.2s ease, height 0.2s ease;
+      transform-origin: top center;
+      min-height: 100%;
+    }
+
+    #no-pdf {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="toolbar-label">CD Scan</span>
+  <div class="divider"></div>
+
+  <button class="btn" id="zoom-out-btn" title="Zoom out">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
+  </button>
+
+  <span id="zoom-display">100%</span>
+
+  <button class="btn" id="zoom-in-btn" title="Zoom in">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="btn" id="fit-btn" title="Toggle fit mode">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="fit-icon">
+      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+    <span id="fit-label">Fit Width</span>
+  </button>
+
+  <div class="spacer"></div>
+
+  <a class="btn" id="download-btn" href="#" download title="Download PDF">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Download
+  </a>
+
+  <button class="btn" id="close-btn" title="Close viewer">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+    Close
+  </button>
+</div>
+
+<div id="viewer-wrap">
+  <iframe id="pdf-frame" src="" title="CD Scan PDF"></iframe>
+  <div id="no-pdf">No PDF specified.</div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const pdfUrl = params.get('pdf');
+  const frame  = document.getElementById('pdf-frame');
+  const wrap   = document.getElementById('viewer-wrap');
+  const noPdf  = document.getElementById('no-pdf');
+
+  // iOS detection — Safari/WebKit renders PDFs natively in an iframe, so
+  // iOS never needs the Google Docs Viewer proxy.
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  // Android detection — many Android browsers have no built-in PDF renderer,
+  // so they still need the Google Docs Viewer proxy.
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  if (!pdfUrl) {
+    frame.style.display = 'none';
+    noPdf.style.display = 'flex';
+  } else if (isIOS) {
+    // iOS iframes can't scroll a multi-page PDF — send the browser straight
+    // to the PDF instead, where Safari's native viewer handles paging,
+    // scrolling, and pinch-zoom correctly.
+    window.location.href = pdfUrl;
+  } else {
+    if (isAndroid) {
+      frame.src = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+    } else {
+      frame.src = pdfUrl;
+    }
+    document.getElementById('download-btn').href = pdfUrl;
+  }
+
+  // Zoom/Fit Logic
+  let scale = 1.0;
+  let fitMode = 'none';
+
+  function setFrameSize() {
+    const availH = wrap.clientHeight - 48;
+    if (fitMode === 'width') {
+      frame.style.width  = (wrap.clientWidth - 48) + 'px';
+      frame.style.height = availH + 'px';
+    } else if (fitMode === 'page') {
+      const w = wrap.clientWidth - 48;
+      const ratio = Math.min(w / 612, availH / 792);
+      frame.style.width  = (612 * ratio) + 'px';
+      frame.style.height = availH + 'px';
+    } else {
+      frame.style.width  = (612 * scale) + 'px';
+      frame.style.height = availH + 'px';
+    }
+  }
+
+  setFrameSize();
+
+  document.getElementById('zoom-in-btn').addEventListener('click', () => {
+    fitMode = 'none'; updateFitBtn(); scale += 0.15; setFrameSize();
+  });
+  document.getElementById('zoom-out-btn').addEventListener('click', () => {
+    fitMode = 'none'; updateFitBtn(); scale = Math.max(0.4, scale - 0.15); setFrameSize();
+  });
+
+  const fitBtn = document.getElementById('fit-btn');
+  const fitLabel = document.getElementById('fit-label');
+  const fitIcon = document.getElementById('fit-icon');
+  const fitStates = [
+    { mode: 'width', label: 'Fit Width', icon: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>' },
+    { mode: 'page', label: 'Fit Page', icon: '<polyline points="4 14 4 20 10 20"/><polyline points="20 10 20 4 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>' },
+    { mode: 'none', label: 'Actual Size', icon: '<circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>' }
+  ];
+
+  let fitIdx = 0;
+  function updateFitBtn() {
+    const state = fitStates.find(s => s.mode === fitMode) || fitStates[0];
+    fitIdx = fitStates.indexOf(state);
+    fitLabel.textContent = state.label;
+    fitIcon.innerHTML = state.icon;
+    document.getElementById('zoom-display').textContent = fitMode === 'none' ? Math.round(scale * 100) + '%' : '—';
+  }
+
+  fitBtn.addEventListener('click', () => {
+    fitIdx = (fitIdx + 1) % fitStates.length;
+    fitMode = fitStates[fitIdx].mode;
+    if (fitMode === 'none') scale = 1.0;
+    updateFitBtn(); setFrameSize();
+  });
+
+  document.getElementById('close-btn').addEventListener('click', () => {
+    window.close();
+    setTimeout(() => { history.back(); }, 150);
+  });
+
+  window.addEventListener('resize', setFrameSize);
+</script>
+
+</body>
+</html>
