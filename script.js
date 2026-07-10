@@ -80,13 +80,9 @@ let currentSort     = 'date-desc';  // matches sortSelect option values
 let sortAllMode     = false;        // false = Series mode, true = Sort All mode
 let selectedBucket  = null;         // value of the highlighted bucket item (string)
 let selectedDiscrete = null;        // value of the highlighted discrete item
-let gridOffset      = 0;            // index in currentList of the first visible grid card
-let gridCols        = 0;            // computed from container width; 0 = not yet calculated
-let gridRowHeight   = 0;            // computed card height in px; applied as grid-auto-rows
 let currentList     = [];           // sorted/filtered album array driving the grid
 let catalogDataReady    = false;    // true once catalog.jsonl has finished loading
 let catalogFetchStarted = false;    // true once the fetch has been kicked off
-const GRID_ROWS     = 4;            // grid is always exactly 4 rows tall
 
 // ===============================
 // SCREEN NAVIGATION
@@ -105,25 +101,16 @@ window.showScreen = function(name) {
     loadComing();
   }
 
-  // Catalog screen needs special handling because the catalog layout has a
-  // fixed pixel height based on clientWidth, which is 0 when the screen is hidden.
-if (name === 'catalog') {
-    if (!catalogFetchStarted) {
-      // First visit to catalog — start the fetch now rather than at page load
-      catalogFetchStarted = true;
-      const msg = document.getElementById('loading-msg');
-      if (msg) msg.classList.remove('hidden');
-      loadCatalog();
-    } else if (!catalogDataReady) {
-      // Fetch is in progress but not done — keep message visible
-      const msg = document.getElementById('loading-msg');
-      if (msg) msg.classList.remove('hidden');
-    } else if (gridCols === 0) {
-      const dims = calcGridDimensions();
-      gridCols = dims.cols;
-      gridRowHeight = dims.rowHeight;
-      rebuildCatalogUI();
-    }
+  // Catalog data is fetched only once, the first time the user navigates
+  // to the catalog screen — keeps the splash/faq/coming screens free of
+  // background network activity. The grid itself is pure CSS now
+  // (grid-template-columns: repeat(auto-fill, ...)), so there's no need
+  // to wait for the panel to be visible/sized before rendering it.
+  if (name === 'catalog' && !catalogFetchStarted) {
+    catalogFetchStarted = true;
+    const msg = document.getElementById('loading-msg');
+    if (msg) msg.classList.remove('hidden');
+    loadCatalog();
   }
 };
 
@@ -307,7 +294,7 @@ function loadCatalog() {
     }
   }, 400);
 
-  fetch('catalog.jsonl?t=' + Date.now())
+  fetch('catalog.jsonl')
     .then(response => {
       if (!response.ok) throw new Error('HTTP ' + response.status + ' loading catalog.jsonl');
       return response.text();
@@ -324,59 +311,19 @@ function loadCatalog() {
           try { return JSON.parse(line); }
           catch(e) {
             console.error('Skipping malformed JSONL line:', line);
-            logError('CATALOG PARSE FAIL', 'Bad JSONL line: ' + line.slice(0, 80));
+            logError('JSONL PARSE FAIL', String(e) + ' — line starts: ' + line.slice(0, 60));
             return null;
           }
         })
         .filter(cd => cd !== null);
 
-      const dims = calcGridDimensions();
-      gridCols      = dims.cols;
-      gridRowHeight = dims.rowHeight;
-      if (gridCols > 0) {
-        rebuildCatalogUI();
-      }
+      rebuildCatalogUI();
     })
     .catch(err => {
       clearTimeout(loadingTimer);
       console.error('Error loading catalog:', err);
       logError('CATALOG LOAD FAIL', String(err));
     });
-}
-
-// ===============================
-// GRID DIMENSION CALCULATION
-// ===============================
-
-// Derives card dimensions so the image portion is approximately square.
-// Strategy: divide available height by 4 rows to get card height, subtract
-// an estimated 2-line info strip to get the image height (= target card width),
-// then compute how many such cards fit across the available width.
-// Returns { cols, rowHeight } or { cols: 0, rowHeight: 0 } when hidden.
-function calcGridDimensions() {
-  const wrapper = document.querySelector('.grid-wrapper');
-  if (!wrapper || wrapper.clientWidth === 0) return { cols: 0, rowHeight: 0 };
-
-  const wrapperH  = wrapper.clientHeight;
-  const wrapperW  = wrapper.clientWidth;
-  const gap       = 8;   // matches .cd-grid gap in CSS
-  const padH      = 20;  // 10px top + 10px bottom padding inside grid-wrapper
-  const padW      = 20;  // 10px left + 10px right
-  const infoStrip = 36;  // estimated height of 2-line info strip (price + cat number + padding)
-
-  // Card height: fill 4 rows in the available vertical space
-  const availH  = wrapperH - padH - (GRID_ROWS - 1) * gap;
-  const cardH   = Math.max(60, availH / GRID_ROWS); // minimum 60px card
-
-  // Target image size: card height minus info strip → the image portion is square
-  // Card width = image width = image height = cardH - infoStrip
-  const cardW = Math.max(60, Math.round(cardH - infoStrip));
-
-  // How many square-ish cards fit across the available width?
-  const availW = wrapperW - padW;
-  const cols   = Math.max(2, Math.floor((availW + gap) / (cardW + gap)));
-
-  return { cols, rowHeight: Math.round(cardH) };
 }
 
 // ===============================
@@ -753,13 +700,11 @@ function renderDiscrete(items, buckets) {
         }
       }
 
-      // Jump the grid to the first album that matches this selection.
-      // Snap to the row boundary so the matching album starts at the left of a row.
+      // Update halos in place (no full re-render — avoids reloading/flickering
+      // every already-visible card image) and scroll to the first match.
+      updateHalos();
       const matchIdx = currentList.findIndex(cd => matchesDiscrete(cd, item.value));
-      gridOffset = matchIdx >= 0
-        ? Math.floor(matchIdx / gridCols) * gridCols
-        : 0;
-      renderGrid();
+      if (matchIdx >= 0) scrollGridToIndex(matchIdx);
     });
 
     col.appendChild(el);
@@ -778,25 +723,37 @@ function renderDiscrete(items, buckets) {
 // RENDER: ALBUM GRID
 // ===============================
 
-function renderGrid() {
-  // Don't attempt to render before column count is known
-  if (gridCols === 0) return;
+// Toggles the halo class on already-rendered cards to match the current
+// selectedDiscrete, without touching image src or rebuilding any DOM —
+// keeps discrete-column clicks fast and flicker-free.
+function updateHalos() {
+  const container = document.getElementById('catalog');
+  if (!container) return;
+  const cards = container.children;
+  currentList.forEach((cd, i) => {
+    const card = cards[i];
+    if (card) card.classList.toggle('cd-halo', matchesDiscrete(cd, selectedDiscrete));
+  });
+}
 
+// Scrolls the grid wrapper so the card at the given currentList index is
+// brought into view — used after a discrete-column click.
+function scrollGridToIndex(idx) {
+  const container = document.getElementById('catalog');
+  if (!container) return;
+  const card = container.children[idx];
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderGrid() {
   const container = document.getElementById('catalog');
   if (!container) return;
 
-  // Apply the JS-computed column count and row height.
-  // grid-auto-rows sets each card to exactly gridRowHeight px; the image
-  // (flex:1) fills the card minus the info strip, staying roughly square.
-  container.style.gridTemplateColumns = 'repeat(' + gridCols + ', 1fr)';
-  container.style.gridAutoRows        = gridRowHeight + 'px';
   container.innerHTML = '';
 
-  // Slice exactly one page of albums from the current sorted list
-  const pageSize = GRID_ROWS * gridCols;
-  const slice    = currentList.slice(gridOffset, gridOffset + pageSize);
-
-  slice.forEach(cd => {
+  // Renders the entire currentList — the grid scrolls natively
+  // (.grid-wrapper has overflow-y: auto), so there's no pagination slice.
+  currentList.forEach(cd => {
     const isHalo  = matchesDiscrete(cd, selectedDiscrete);
     const div     = document.createElement('div');
     div.className = 'cd-thumb' + (isHalo ? ' cd-halo' : '');
@@ -809,7 +766,7 @@ function renderGrid() {
     const isNew     = cd.DateAdded && daysSince <= 15;
 
     // Images use data-src so they're only fetched when the observer fires,
-    // keeping network usage to the visible page of cards only
+    // keeping network usage light regardless of catalog size
     div.innerHTML =
       '<img class="cd-thumb-img" data-src="' + thumbSrc + '" alt="' + cd.Title + '">' +
       '<div class="add-confirmation">Added!</div>' +
@@ -827,9 +784,9 @@ function renderGrid() {
     container.appendChild(div);
   });
 
-  // Lazy-load images for this page only using IntersectionObserver.
-  // Because the grid is overflow-hidden the cards are technically all "visible"
-  // in the document flow, so rootMargin: '0px' is sufficient.
+  // Lazy-load images with IntersectionObserver. rootMargin is 200px so
+  // images just off-screen preload smoothly as the user scrolls the
+  // (now much taller, unpaginated) grid.
   const imgs = container.querySelectorAll('img.cd-thumb-img');
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver(entries => {
@@ -841,7 +798,7 @@ function renderGrid() {
           observer.unobserve(img);
         }
       });
-    }, { rootMargin: '50px 0px' });
+    }, { rootMargin: '200px 0px' });
     imgs.forEach(img => observer.observe(img));
   } else {
     // Fallback for browsers without IntersectionObserver
@@ -856,32 +813,17 @@ function renderGrid() {
 
 // ===============================
 // FULL UI REBUILD
-// Called whenever sort or mode changes — rebuilds all three panels from scratch
-// and resets selection state.
+// Called whenever sort or mode changes — rebuilds all three panels from
+// scratch. Selection is preserved across sort changes when still valid;
+// otherwise cleared to avoid a phantom halo.
 // ===============================
 
 function rebuildCatalogUI() {
-  // Re-sort the full album list for the new mode/sort combination
   currentList = getSortedList();
 
-  // Preserve the current discrete selection across sort changes so the user
-  // doesn't lose their place when changing sort order within Series mode.
-  // After re-sorting, find where the selected item now appears and jump
-  // gridOffset to that row. If the selection no longer exists in the new
-  // context (e.g., after a mode switch from Series to All), findIndex
-  // returns -1 and we do a silent clean reset instead.
-  if (selectedDiscrete !== null) {
-    const matchIdx = currentList.findIndex(cd => matchesDiscrete(cd, selectedDiscrete));
-    if (matchIdx >= 0) {
-      gridOffset = Math.floor(matchIdx / gridCols) * gridCols;
-    } else {
-      // Selection doesn't exist in the new context — clear it so no phantom halo appears
-      selectedBucket   = null;
-      selectedDiscrete = null;
-      gridOffset       = 0;
-    }
-  } else {
-    gridOffset = 0;
+  if (selectedDiscrete !== null && !currentList.some(cd => matchesDiscrete(cd, selectedDiscrete))) {
+    selectedBucket   = null;
+    selectedDiscrete = null;
   }
 
   const buckets = buildBuckets();
@@ -890,60 +832,10 @@ function rebuildCatalogUI() {
   renderBuckets(buckets);
   renderDiscrete(items, buckets);
   renderGrid();
+
+  const wrapper = document.querySelector('.grid-wrapper');
+  if (wrapper) wrapper.scrollTop = 0;
 }
-
-// ===============================
-// NAVIGATION ARROWS
-// Each function moves gridOffset by the appropriate amount and re-renders.
-// Row Up/Down moves one row (gridCols items). Page Up/Down moves a full
-// grid page (GRID_ROWS * gridCols items). First/Last jump to the endpoints.
-// ===============================
-
-function navFirst() {
-  gridOffset = 0;
-  renderGrid();
-}
-
-function navLast() {
-  // Position the view so the very last album lands in the last grid slot.
-  // Formula: offset = length - pageSize places the last album at position
-  // (length-1) - offset = pageSize - 1, which is the last slot.
-  const pageSize = GRID_ROWS * gridCols;
-  gridOffset = Math.max(0, currentList.length - pageSize);
-  renderGrid();
-}
-
-function navRowUp() {
-  gridOffset = Math.max(0, gridOffset - gridCols);
-  renderGrid();
-}
-
-function navRowDown() {
-  // Stop when the last album's row is at the top of the grid — don't
-  // scroll past a state where nothing would be in the first row
-  const lastRowStart = Math.floor(Math.max(0, currentList.length - 1) / gridCols) * gridCols;
-  gridOffset = Math.min(lastRowStart, gridOffset + gridCols);
-  renderGrid();
-}
-
-function navPageUp() {
-  gridOffset = Math.max(0, gridOffset - GRID_ROWS * gridCols);
-  renderGrid();
-}
-
-function navPageDown() {
-  const lastRowStart = Math.floor(Math.max(0, currentList.length - 1) / gridCols) * gridCols;
-  gridOffset = Math.min(lastRowStart, gridOffset + GRID_ROWS * gridCols);
-  renderGrid();
-}
-
-// Wire up the six arrow buttons
-document.getElementById('nav-first'    ).addEventListener('click', navFirst);
-document.getElementById('nav-page-up'  ).addEventListener('click', navPageUp);
-document.getElementById('nav-row-up'   ).addEventListener('click', navRowUp);
-document.getElementById('nav-row-down' ).addEventListener('click', navRowDown);
-document.getElementById('nav-page-down').addEventListener('click', navPageDown);
-document.getElementById('nav-last'     ).addEventListener('click', navLast);
 
 // ===============================
 // CATALOG CONTROLS
